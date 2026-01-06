@@ -79,6 +79,8 @@ export function useAdminReports() {
       userId: report.userId,
       reason: report.reason,
       status: report.status,
+      type: report.type,
+      violations: report.violations,
       createdAt: report.createdAt,
       // Attach comment and user data if available
       comment: instantQuery.data.comments?.find((c: any) => c.id === report.commentId),
