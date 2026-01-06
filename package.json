@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cleanup:orphaned-comments": "tsx scripts/cleanup-orphaned-comments.ts"
   },
   "dependencies": {
     "@instantdb/admin": "^0.22.96",

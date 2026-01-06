@@ -11,25 +11,21 @@ export function useCommentsByApp(appId: string) {
     return { data: [], isLoading: false }
   }
 
+  // Always call the hook (Rules of Hooks) but query will be empty if no appId
   const instantQuery = db.useQuery({
-    comments: {
+    comments: appId ? {
       $: {
         where: { 
-          appId,
-          // Only fetch published comments at the database level
-          // This ensures the count is accurate and real-time updates work correctly
-          or: [
-            { status: "published" },
-            { status: null }  // For backward compatibility with comments without status
-          ]
+          appId
         },
       },
-    },
+    } : undefined,
     $users: {},
   })
 
   const comments = useMemo(() => {
-    if (!instantQuery?.data?.comments) return []
+    // Return empty if no appId or no data
+    if (!appId || !instantQuery?.data?.comments) return []
     
     return instantQuery.data.comments
       .map((comment: any) => {
@@ -47,7 +43,7 @@ export function useCommentsByApp(appId: string) {
           createdAt: comment.createdAt,
         }
       }) as (Comment & { userName: string })[]
-  }, [instantQuery?.data])
+  }, [appId, instantQuery?.data])
 
   return { data: comments, isLoading: instantQuery?.isLoading ?? false }
 }

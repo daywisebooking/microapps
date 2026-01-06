@@ -5,7 +5,7 @@ import { ExternalLink } from "lucide-react"
 import type { App } from "@/lib/instant"
 import { VoteButtons } from "./VoteButtons"
 import { FavoriteButton } from "./FavoriteButton"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { trackEvent } from "@/lib/analytics"
 import { useUser } from "@/lib/auth"
 
@@ -15,18 +15,23 @@ interface AppHeaderProps {
 
 export function AppHeader({ app }: AppHeaderProps) {
   const { user } = useUser()
+  const trackedAppId = useRef<string | null>(null)
 
-  // Track app view on component mount
+  // Track app view once per app (not on every user state change)
   useEffect(() => {
-    const userId = (user as any)?.id
-    trackEvent("app_view", {
-      userId,
-      appId: app.id,
-      metadata: {
-        appName: app.name,
-        appSlug: app.slug,
-      }
-    })
+    // Only track once per unique app
+    if (trackedAppId.current !== app.id) {
+      trackedAppId.current = app.id
+      const userId = (user as any)?.id
+      trackEvent("app_view", {
+        userId,
+        appId: app.id,
+        metadata: {
+          appName: app.name,
+          appSlug: app.slug,
+        }
+      })
+    }
   }, [app.id, app.name, app.slug, user])
 
   return (

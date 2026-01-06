@@ -33,7 +33,7 @@ export function AppDetail({ slug }: AppDetailProps) {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="comments">
-            Comments ({comments.length})
+            Comments ({comments?.filter(c => !c.status || c.status === "published")?.length ?? 0})
           </TabsTrigger>
         </TabsList>
 

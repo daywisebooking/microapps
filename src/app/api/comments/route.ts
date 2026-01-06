@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
     const moderationResult = await moderateContent(content, userId, appId)
 
     // Determine comment status based on moderation result
-    const commentStatus = moderationResult.allowed ? "published" : "pending_review"
+    // Always publish comments immediately for better UX
+    // Moderation will still create auto-reports for admin review
+    const commentStatus = "published"
 
     if (!moderationResult.allowed) {
       // Log moderation details server-side (for admin review)

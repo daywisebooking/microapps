@@ -197,9 +197,27 @@ export function useUser() {
 
   // InstantDB provides useAuth() directly on the db object
   const auth = db.useAuth()
+  const userId = auth?.user?.id
+
+  // Query $users table to get custom fields (type, username, etc.)
+  // This is necessary because db.useAuth() only returns basic auth info
+  // Must always call the hook (Rules of Hooks) - query will be empty if no userId
+  const userQuery = db.useQuery({
+    $users: userId ? {
+      $: {
+        where: { id: userId }
+      }
+    } : undefined
+  })
+
+  // Merge auth user with $users data to include type field
+  const userFromDb = userQuery?.data?.$users?.[0]
+  const fullUser = userId && userFromDb 
+    ? { ...auth.user, ...userFromDb }
+    : auth?.user || null
   
   return {
-    user: auth?.user || null,
-    isLoading: auth?.isLoading || false,
+    user: fullUser,
+    isLoading: auth?.isLoading || userQuery?.isLoading || false,
   }
 }

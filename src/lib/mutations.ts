@@ -385,6 +385,9 @@ export async function deleteComment(
   }
 
   try {
+    // First, verify the comment exists and user has permission
+    let targetComment: any = null
+    
     if (isAdmin) {
       // Admin can delete any comment - just verify comment exists
       const result = await adminDb.query({
@@ -400,6 +403,7 @@ export async function deleteComment(
       if (!result?.comments || result.comments.length === 0) {
         return { success: false, error: "Comment not found" }
       }
+      targetComment = result.comments[0]
     } else {
       // Non-admin: Verify comment belongs to user (authorization check)
       const result = await adminDb.query({
@@ -416,11 +420,46 @@ export async function deleteComment(
       if (!result?.comments || result.comments.length === 0) {
         return { success: false, error: "Comment not found or unauthorized" }
       }
+      targetComment = result.comments[0]
     }
 
-    await adminDb.transact([
-      adminDb.tx.comments[commentId].delete()
-    ])
+    // Query all comments for the app to find descendants (for cascade deletion)
+    const allCommentsResult = await adminDb.query({
+      comments: {
+        $: {
+          where: {
+            appId: targetComment.appId
+          }
+        }
+      }
+    })
+
+    const allComments = allCommentsResult?.comments || []
+
+    // Helper function to recursively find all descendant comment IDs
+    const findDescendants = (parentId: string): string[] => {
+      const children = allComments.filter((c: any) => c.parentId === parentId)
+      let descendants: string[] = []
+      
+      for (const child of children) {
+        descendants.push(child.id)
+        // Recursively find descendants of this child
+        descendants = descendants.concat(findDescendants(child.id))
+      }
+      
+      return descendants
+    }
+
+    // Get all descendant comment IDs
+    const descendantIds = findDescendants(commentId)
+
+    // Build transaction to delete the comment and all its descendants
+    const deleteTransactions = [
+      adminDb.tx.comments[commentId].delete(),
+      ...descendantIds.map(id => adminDb.tx.comments[id].delete())
+    ]
+
+    await adminDb.transact(deleteTransactions)
 
     return { success: true }
   } catch (error: any) {
