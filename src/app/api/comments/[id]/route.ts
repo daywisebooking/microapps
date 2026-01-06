@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { writeRateLimiter, getRateLimitIdentifier, checkRateLimit } from "@/lib/ratelimit"
 import { deleteComment } from "@/lib/mutations"
+import { verifyAdmin } from "@/lib/admin"
 
 export async function DELETE(
   request: NextRequest,
@@ -8,6 +9,7 @@ export async function DELETE(
 ) {
   try {
     const userId = request.headers.get("x-user-id") || null
+    const userType = request.headers.get("x-user-type") || null
     const { id } = await params
     const commentId = id
 
@@ -29,8 +31,11 @@ export async function DELETE(
       )
     }
 
-    // Verify comment belongs to user, then delete from InstantDB
-    const result = await deleteComment(userId, commentId)
+    // Check if user is admin
+    const adminCheck = await verifyAdmin(userId, userType)
+    
+    // Delete comment - if admin, allow deleting any comment; otherwise only own comments
+    const result = await deleteComment(userId, commentId, adminCheck.isAdmin)
 
     if (!result.success) {
       return NextResponse.json(

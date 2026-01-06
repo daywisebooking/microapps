@@ -274,7 +274,6 @@ export async function createComment(
         
         const result = await adminDb.transact([
           adminDb.tx.$users[userId].update({
-            id: userId,
             username: username,
             createdAt: Date.now()
           })
@@ -377,7 +376,8 @@ export async function createComment(
 
 export async function deleteComment(
   userId: string,
-  commentId: string
+  commentId: string,
+  isAdmin: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
   if (!adminDb) {
     // Mock mode - return success
@@ -385,20 +385,37 @@ export async function deleteComment(
   }
 
   try {
-    // Verify comment belongs to user (authorization check)
-    const result = await adminDb.query({
-      comments: {
-        $: {
-          where: {
-            id: commentId,
-            userId
+    if (isAdmin) {
+      // Admin can delete any comment - just verify comment exists
+      const result = await adminDb.query({
+        comments: {
+          $: {
+            where: {
+              id: commentId
+            }
           }
         }
-      }
-    })
+      })
 
-    if (!result?.comments || result.comments.length === 0) {
-      return { success: false, error: "Comment not found or unauthorized" }
+      if (!result?.comments || result.comments.length === 0) {
+        return { success: false, error: "Comment not found" }
+      }
+    } else {
+      // Non-admin: Verify comment belongs to user (authorization check)
+      const result = await adminDb.query({
+        comments: {
+          $: {
+            where: {
+              id: commentId,
+              userId
+            }
+          }
+        }
+      })
+
+      if (!result?.comments || result.comments.length === 0) {
+        return { success: false, error: "Comment not found or unauthorized" }
+      }
     }
 
     await adminDb.transact([

@@ -14,7 +14,15 @@ export function useCommentsByApp(appId: string) {
   const instantQuery = db.useQuery({
     comments: {
       $: {
-        where: { appId },
+        where: { 
+          appId,
+          // Only fetch published comments at the database level
+          // This ensures the count is accurate and real-time updates work correctly
+          or: [
+            { status: "published" },
+            { status: null }  // For backward compatibility with comments without status
+          ]
+        },
       },
     },
     $users: {},
@@ -24,10 +32,6 @@ export function useCommentsByApp(appId: string) {
     if (!instantQuery?.data?.comments) return []
     
     return instantQuery.data.comments
-      .filter((comment: any) => {
-        // Only show published comments (or comments without status field for backwards compatibility)
-        return !comment.status || comment.status === "published"
-      })
       .map((comment: any) => {
         const user = instantQuery.data.$users?.find((u: any) => u.id === comment.userId)
         return {

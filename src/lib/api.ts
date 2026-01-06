@@ -144,13 +144,15 @@ export async function voteCommentAPI(
 
 export async function deleteCommentAPI(
   commentId: string,
-  userId: string
+  userId: string,
+  userType?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(`/api/comments/${commentId}`, {
       method: "DELETE",
       headers: {
         "x-user-id": userId,
+        "x-user-type": userType || "",
       },
     })
 

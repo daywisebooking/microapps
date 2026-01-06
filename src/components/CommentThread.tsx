@@ -28,6 +28,8 @@ export function CommentThread({ comment, allComments, level = 0 }: CommentThread
   
   const userVote = votes.get(comment.id)
   const isCommentAuthor = user?.id === comment.userId
+  const isAdmin = (user as any)?.type === "admin"
+  const canDelete = isCommentAuthor || isAdmin
 
   // Get direct replies to this comment
   const replies = allComments.filter(c => c.parentId === comment.id)
@@ -55,13 +57,13 @@ export function CommentThread({ comment, allComments, level = 0 }: CommentThread
   }
 
   const handleDelete = async () => {
-    if (!isCommentAuthor || !user) return
+    if (!canDelete || !user) return
 
     const confirmed = confirm("Are you sure you want to delete this comment? This action cannot be undone.")
     if (!confirmed) return
 
     setIsDeleting(true)
-    const result = await deleteCommentAPI(comment.id, (user as any).id)
+    const result = await deleteCommentAPI(comment.id, (user as any).id, (user as any).type)
 
     if (!result.success) {
       alert(result.error || "Failed to delete comment")
@@ -126,12 +128,12 @@ export function CommentThread({ comment, allComments, level = 0 }: CommentThread
               <span className="text-xs text-gray-500">
                 {getRelativeTime(comment.createdAt)}
               </span>
-              {isCommentAuthor && (
+              {canDelete && (
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
                   className="ml-auto p-1 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                  title="Delete comment"
+                  title={isAdmin && !isCommentAuthor ? "Delete comment (admin)" : "Delete comment"}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
