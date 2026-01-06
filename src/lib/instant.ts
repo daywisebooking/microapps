@@ -114,6 +114,7 @@ export interface Favorite {
 }
 
 export type CommentType = "general" | "feature" | "bug"
+export type CommentStatus = "published" | "pending_review" | "removed"
 
 export interface Comment {
   id: string
@@ -122,6 +123,7 @@ export interface Comment {
   parentId: string | null
   content: string
   type: CommentType
+  status?: CommentStatus
   voteCount?: number
   createdAt: number
 }
@@ -134,12 +136,16 @@ export interface CommentVote {
   createdAt: number
 }
 
+export type ReportType = "user_report" | "auto_flag"
+
 export interface Report {
   id: string
   commentId: string
   userId: string
   reason: string
   status: "pending" | "approved" | "rejected"
+  type?: ReportType
+  violations?: string[]
   createdAt: number
 }
 
@@ -155,5 +161,6 @@ export interface Event {
 export interface Featured {
   id: string
   appId: string
+  badges?: string[]
   createdAt: number
 }

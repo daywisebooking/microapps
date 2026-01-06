@@ -292,7 +292,8 @@ export function useUserVoteForApp(userId: string | null | undefined, appId: stri
 
   const vote = useMemo(() => {
     if (!shouldQuery || !instantQuery?.data?.votes || instantQuery.data.votes.length === 0) return null
-    return instantQuery.data.votes[0]
+    const voteData = instantQuery.data.votes[0] as any
+    return voteData ? { id: voteData.id, direction: voteData.direction } : null
   }, [shouldQuery, instantQuery?.data])
 
   return { data: vote, isLoading: instantQuery?.isLoading ?? false }

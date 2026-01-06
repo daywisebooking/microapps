@@ -54,7 +54,7 @@ export default function Home() {
                       </h3>
                       {badges && badges.length > 0 && (
                         <div className="flex gap-1.5">
-                          {badges.map((badge) => (
+                          {badges.map((badge: string) => (
                             <FeaturedBadge key={badge} badge={badge} />
                           ))}
                         </div>
